@@ -162,7 +162,7 @@ impl ImplItemMethodInfo {
                 #value
             }
         });
-        if crate::is_witgen() {
+        if crate::is_witgen() && !is_private {
             let args = attr_signature_info.pat_type_list();
 
             let attrs = if matches!(method_type, MethodType::View) {
