@@ -178,9 +178,13 @@ impl ImplItemMethodInfo {
             };
             let returns = match returns {
                 ReturnType::Default => quote! {#returns},
-                ReturnType::Type(_, _) => {
-                    if receiver.is_none() {
+                // TODO: improve this to not use string checks.
+                ReturnType::Type(_, b) => {
+                    let ty_str = (quote! {#b}).to_string();
+                    if receiver.is_none() || ty_str.contains("Promise") {
                         quote! {}
+                    } else if ty_str.contains("U128"){
+                       quote! { -> U128}
                     } else {
                         quote! {#returns}
                     }
