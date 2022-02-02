@@ -691,7 +691,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
- "witgen_macro_helper 0.7.0 (git+https://github.com/bnjjj/witgen?rev=de915dede5f234575e0c7f8192a7264a9d110f31)",
+ "witgen_macro_helper 0.7.0 (git+https://github.com/ahalabs/witgen?rev=1aca670c8c4589a214a7e9e1e79bd9a89001870e)",
 ]
 
 [[package]]
@@ -1386,7 +1386,7 @@ dependencies = [
 [[package]]
 name = "witgen_macro_helper"
 version = "0.7.0"
-source = "git+https://github.com/bnjjj/witgen?rev=de915dede5f234575e0c7f8192a7264a9d110f31#de915dede5f234575e0c7f8192a7264a9d110f31"
+source = "git+https://github.com/ahalabs/witgen?rev=1aca670c8c4589a214a7e9e1e79bd9a89001870e#1aca670c8c4589a214a7e9e1e79bd9a89001870e"
 dependencies = [
  "anyhow",
  "cargo_metadata",
