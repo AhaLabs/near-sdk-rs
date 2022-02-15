@@ -1,5 +1,8 @@
-use crate::core_impl::info_extractor::{
-    AttrSigInfo, ImplItemMethodInfo, InputStructType, MethodType, SerializerType,
+use crate::core_impl::{
+    info_extractor::{
+        AttrSigInfo, ImplItemMethodInfo, InputStructType, MethodType, SerializerType,
+    },
+    ArgInfo,
 };
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -163,19 +166,26 @@ impl ImplItemMethodInfo {
             }
         });
         if crate::is_witgen() && !is_private {
-            let args = attr_signature_info.pat_type_list();
+            let mut args = TokenStream2::new();
+            // Todo: don't use string
+            for arg in attr_signature_info.input_args() {
+                let ArgInfo { ident, ty, .. } = &arg;
+                let mut arg_str = (quote! {#ty}).to_string();
+                arg_str = arg_str.replace("near_sdk :: json_types :: U128", "U128");
+                let ty = syn::parse_str::<syn::Type>(&arg_str).unwrap();
+                args.extend(quote! {
+                    #ident: #ty,
+                });
+            }
 
-            let attrs = if matches!(method_type, MethodType::View) {
-                quote! {
-                  #non_bindgen_attrs
-                  /// view
-                }
+            let change_comment = if matches!(method_type, MethodType::View) {
+                quote! {}
             } else {
                 quote! {
-                  #non_bindgen_attrs
                   /// change
                 }
             };
+
             let returns = match returns {
                 ReturnType::Default => quote! {#returns},
                 // TODO: improve this to not use string checks.
@@ -183,8 +193,8 @@ impl ImplItemMethodInfo {
                     let ty_str = (quote! {#b}).to_string();
                     if receiver.is_none() || ty_str.contains("Promise") {
                         quote! {}
-                    } else if ty_str.contains("U128"){
-                       quote! { -> U128}
+                    } else if ty_str.contains("U128") {
+                        quote! { -> U128}
                     } else {
                         quote! {#returns}
                     }
@@ -192,7 +202,8 @@ impl ImplItemMethodInfo {
             };
 
             let func = quote! {
-              #attrs
+              #non_bindgen_attrs
+              #change_comment
               pub fn #ident(#args) #returns {}
             };
             // TODO: Better error handling
