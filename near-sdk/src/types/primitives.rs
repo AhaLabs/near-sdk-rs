@@ -13,6 +13,7 @@ pub type MerkleHash = CryptoHash;
 pub type ValidatorId = u64;
 /// Mask which validators participated in multi sign.
 pub type ValidatorMask = Vec<bool>;
+#[crate::witgen]
 /// StorageUsage is used to count the amount of storage used by a contract.
 pub type StorageUsage = u64;
 /// StorageUsageChange is used to count the storage usage within a single contract call.
@@ -25,6 +26,7 @@ pub type BlockHeight = u64;
 pub type EpochHeight = u64;
 /// Shard index, from 0 to NUM_SHARDS - 1.
 pub type ShardId = u64;
+#[crate::witgen]
 /// Balance is a type for storing amounts of tokens, specified in yoctoNEAR.
 pub type Balance = u128;
 

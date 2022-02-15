@@ -4,7 +4,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[allow(dead_code)]
 mod types {
     #[crate::witgen]
-    type Base64VecU8 = Vec<u8>;
+    /// base64 string.
+    type Base64VecU8 = String;
 }
 
 /// Helper class to serialize/deserialize `Vec<u8>` to base64 string.

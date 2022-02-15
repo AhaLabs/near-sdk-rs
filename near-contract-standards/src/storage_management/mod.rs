@@ -1,8 +1,9 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::AccountId;
+use near_sdk::{witgen, AccountId};
 
+#[witgen]
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct StorageBalance {
@@ -10,6 +11,7 @@ pub struct StorageBalance {
     pub available: U128,
 }
 
+#[witgen]
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct StorageBalanceBounds {

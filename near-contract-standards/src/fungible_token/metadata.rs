@@ -5,6 +5,7 @@ use near_sdk::serde::{Deserialize, Serialize};
 
 pub const FT_METADATA_SPEC: &str = "ft-1.0.0";
 
+#[near_sdk::witgen]
 #[derive(BorshDeserialize, BorshSerialize, Clone, Deserialize, Serialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct FungibleTokenMetadata {

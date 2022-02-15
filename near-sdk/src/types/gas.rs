@@ -118,6 +118,13 @@ impl ops::Rem<u64> for Gas {
     }
 }
 
+#[allow(dead_code)]
+mod private {
+    #[crate::witgen]
+    /// Represents the amount of NEAR tokens in "gas units" which are used to fund transactions.
+    type Gas = u64;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

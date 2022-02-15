@@ -13,9 +13,11 @@ pub use self::account_id::{AccountId, ParseAccountIdError};
 mod gas;
 pub use self::gas::Gas;
 
+#[crate::witgen]
 /// Raw type for duration in nanoseconds
 pub type Duration = u64;
 
+#[crate::witgen]
 /// Raw type for timestamp in nanoseconds
 pub type Timestamp = u64;
 
