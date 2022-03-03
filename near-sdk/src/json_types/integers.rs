@@ -9,6 +9,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[allow(dead_code)]
 mod types {
     #[crate::witgen]
+    /// @pattern ^[0-9]+$
     type U128 = String;
 }
 
