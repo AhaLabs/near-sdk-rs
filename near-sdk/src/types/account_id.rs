@@ -7,7 +7,9 @@ use crate::env::is_valid_account_id;
 #[allow(dead_code)]
 mod a {
   #[crate::witgen]
-    /// @pattern ^(([a-z\d]+[\-_])*[a-z\d]+\.)*([a-z\d]+[\-_])*[a-z\d]+$
+    /// @minLength 2
+    /// @maxLength 64
+    /// @pattern ^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$
     type AccountId = String;
 }
 
