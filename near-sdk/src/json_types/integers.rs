@@ -11,7 +11,6 @@ mod types {
     #[crate::witgen]
     /// String representation of a u128-bit integer
     /// @pattern ^[0-9]+$
-    /// Note: largest u128 is "340282366920938463463374607431768211455"
     type U128 = String;
 }
 
