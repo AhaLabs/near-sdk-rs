@@ -3,12 +3,14 @@ extern crate proc_macro;
 
 mod core_impl;
 
+use std::collections::HashMap;
+
 use core_impl::ext::generate_ext_structs;
 use proc_macro::TokenStream;
 
 use self::core_impl::*;
 use proc_macro2::Span;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::visit::Visit;
 use syn::{File, ItemEnum, ItemImpl, ItemStruct, ItemTrait};
 
@@ -45,17 +47,18 @@ use syn::{File, ItemEnum, ItemImpl, ItemStruct, ItemTrait};
 /// ```
 #[proc_macro_attribute]
 pub fn near_bindgen(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let attr = _attr.to_string();
     if let Ok(input) = syn::parse::<ItemStruct>(item.clone()) {
         let ext_gen = generate_ext_structs(&input.ident, Some(&input.generics));
         TokenStream::from(quote! {
-            #input
-            #ext_gen
+          #input
+          #ext_gen
         })
     } else if let Ok(input) = syn::parse::<ItemEnum>(item.clone()) {
         let ext_gen = generate_ext_structs(&input.ident, Some(&input.generics));
         TokenStream::from(quote! {
-            #input
-            #ext_gen
+          #input
+          #ext_gen
         })
     } else if let Ok(mut input) = syn::parse::<ItemImpl>(item) {
         #[cfg(not(feature = "abi"))]
@@ -70,12 +73,14 @@ pub fn near_bindgen(_attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         };
 
-        let item_impl_info = match ItemImplInfo::new(&mut input) {
-            Ok(x) => x,
-            Err(err) => {
-                return err.to_compile_error().into();
-            }
-        };
+        let item_impl_info =
+            match ItemImplInfo::new(&mut input, if attr != "" { Some(attr) } else { None }) {
+                Ok(x) => x,
+                Err(err) => {
+                    return err.to_compile_error().into();
+                }
+            };
+
         let generated_code = item_impl_info.wrapper_code();
 
         // Add wrapper methods for ext call API

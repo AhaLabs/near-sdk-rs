@@ -3,7 +3,7 @@ use crate::core_impl::info_extractor::{
 };
 use crate::core_impl::utils;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::ReturnType;
 
@@ -81,12 +81,12 @@ impl ImplItemMethodInfo {
             quote! {}
         };
         let body = if matches!(method_type, &MethodType::Init) {
-            match init_method_wrapper(self, true) {
+            match self.init_method_wrapper(true) {
                 Ok(wrapper) => wrapper,
                 Err(err) => return err.to_compile_error(),
             }
         } else if matches!(method_type, &MethodType::InitIgnoreState) {
-            match init_method_wrapper(self, false) {
+            match self.init_method_wrapper(false) {
                 Ok(wrapper) => wrapper,
                 Err(err) => return err.to_compile_error(),
             }
@@ -96,15 +96,30 @@ impl ImplItemMethodInfo {
             let contract_ser;
             if let Some(receiver) = receiver {
                 let mutability = &receiver.mutability;
+                let load = if self.is_component() {
+                    quote! {
+                      #struct_type::get_lazy().get()
+                    }
+                } else {
+                    quote! {
+                      near_sdk::env::state_read()
+                    }
+                };
                 contract_deser = quote! {
-                    let #mutability contract: #struct_type = near_sdk::env::state_read().unwrap_or_default();
+                    let #mutability contract: #struct_type = #load.unwrap_or_default();
                 };
                 method_invocation = quote! {
                     contract.#ident(#arg_list)
                 };
                 if matches!(method_type, &MethodType::Regular) {
-                    contract_ser = quote! {
-                        near_sdk::env::state_write(&contract);
+                    contract_ser = if self.is_component() {
+                        quote! {
+                          #struct_type::set_lazy(contract);
+                        }
+                    } else {
+                        quote! {
+                          near_sdk::env::state_write(&contract);
+                        }
                     };
                 } else {
                     contract_ser = TokenStream2::new();
@@ -205,48 +220,66 @@ impl ImplItemMethodInfo {
             }
         }
     }
-}
+    fn is_component(&self) -> bool {
+        self.attr.is_some()
+    }
 
-fn init_method_wrapper(
-    method_info: &ImplItemMethodInfo,
-    check_state: bool,
-) -> Result<TokenStream2, syn::Error> {
-    let ImplItemMethodInfo { attr_signature_info, struct_type, .. } = method_info;
-    let arg_list = attr_signature_info.arg_list();
-    let AttrSigInfo { ident, returns, is_handles_result, .. } = attr_signature_info;
-    let state_check = if check_state {
-        quote! {
-            if near_sdk::env::state_exists() {
-                near_sdk::env::panic_str("The contract has already been initialized");
-            }
-        }
-    } else {
-        quote! {}
-    };
-    match returns {
-        ReturnType::Default => {
-            Err(syn::Error::new(ident.span(), "Init methods must return the contract state"))
-        }
-        ReturnType::Type(_, return_type)
-            if utils::type_is_result(return_type) && *is_handles_result =>
-        {
-            Ok(quote! {
-                #state_check
-                let result = #struct_type::#ident(#arg_list);
-                match result {
-                    Ok(contract) => near_sdk::env::state_write(&contract),
-                    Err(err) => near_sdk::FunctionError::panic(&err)
+    fn init_method_wrapper(&self, check_state: bool) -> Result<TokenStream2, syn::Error> {
+        let ImplItemMethodInfo { attr_signature_info, struct_type, .. } = self;
+        let arg_list = attr_signature_info.arg_list();
+        let AttrSigInfo { ident, returns, is_handles_result, .. } = attr_signature_info;
+        let state_check = if check_state {
+            if self.is_component() {
+              quote! {
+                if #struct_type::get_lazy().get().is_some() {
+                  near_sdk::env::panic_str("The #struct_type has already been initialized");
                 }
-            })
+              }
+            } else {
+                quote! {
+                    if near_sdk::env::state_exists() {
+                        near_sdk::env::panic_str("The contract has already been initialized");
+                    }
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        let state_write = if self.is_component() {
+          quote! {
+            #struct_type::set_lazy(contract)
+          }
+        } else {
+          quote! {
+            near_sdk::env::state_write(&contract)
+          }
+        };
+        match returns {
+            ReturnType::Default => {
+                Err(syn::Error::new(ident.span(), "Init methods must return the contract state"))
+            }
+            ReturnType::Type(_, return_type)
+                if utils::type_is_result(return_type) && *is_handles_result =>
+            {
+                Ok(quote! {
+                    #state_check
+                    let result = #struct_type::#ident(#arg_list);
+                    match result {
+                        Ok(contract) => #state_write,
+                        Err(err) => near_sdk::FunctionError::panic(&err)
+                    }
+                })
+            }
+            ReturnType::Type(_, return_type) if *is_handles_result => Err(syn::Error::new(
+                return_type.span(),
+                "Method marked with #[handle_result] should return Result<T, E>",
+            )),
+            ReturnType::Type(_, _) => Ok(quote! {
+                #state_check
+                let contract = #struct_type::#ident(#arg_list);
+                #state_write;
+            }),
         }
-        ReturnType::Type(_, return_type) if *is_handles_result => Err(syn::Error::new(
-            return_type.span(),
-            "Method marked with #[handle_result] should return Result<T, E>",
-        )),
-        ReturnType::Type(_, _) => Ok(quote! {
-            #state_check
-            let contract = #struct_type::#ident(#arg_list);
-            near_sdk::env::state_write(&contract);
-        }),
     }
 }

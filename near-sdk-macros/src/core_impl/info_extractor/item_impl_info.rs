@@ -10,10 +10,12 @@ pub struct ItemImplInfo {
     pub ty: Type,
     /// Info extracted for each method.
     pub methods: Vec<ImplItemMethodInfo>,
+    /// Optional attribute
+    pub attr: Option<String>,
 }
 
 impl ItemImplInfo {
-    pub fn new(original: &mut ItemImpl) -> syn::Result<Self> {
+    pub fn new(original: &mut ItemImpl, attr: Option<String>) -> syn::Result<Self> {
         if !original.generics.params.is_empty() {
             return Err(Error::new(
                 original.generics.params.span(),
@@ -26,10 +28,10 @@ impl ItemImplInfo {
         let mut methods = vec![];
         for subitem in &mut original.items {
             if let ImplItem::Method(m) = subitem {
-                let method_info = ImplItemMethodInfo::new(m, ty.clone())?;
+                let method_info = ImplItemMethodInfo::new(m, ty.clone(), attr.clone())?;
                 methods.push(method_info);
             }
         }
-        Ok(Self { is_trait_impl, ty, methods })
+        Ok(Self { is_trait_impl, ty, methods, attr })
     }
 }
