@@ -98,7 +98,7 @@ impl ImplItemMethodInfo {
                 let mutability = &receiver.mutability;
                 let load = if self.is_component() {
                     quote! {
-                      #struct_type::get_lazy().get()
+                      #struct_type::get_lazy()
                     }
                 } else {
                     quote! {
@@ -220,6 +220,7 @@ impl ImplItemMethodInfo {
             }
         }
     }
+
     fn is_component(&self) -> bool {
         self.attr.is_some()
     }
@@ -231,7 +232,7 @@ impl ImplItemMethodInfo {
         let state_check = if check_state {
             if self.is_component() {
               quote! {
-                if #struct_type::get_lazy().get().is_some() {
+                if #struct_type::get_lazy().is_some() {
                   near_sdk::env::panic_str("The #struct_type has already been initialized");
                 }
               }
